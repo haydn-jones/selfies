@@ -109,13 +109,13 @@ def tokenize_smiles(smiles: str) -> Iterator[SMILESToken]:
         elif smiles[i] == "%":  # two-digit ring number (e.g. %12)
             rnum = smiles[i + 1: i + 3]
             if not (rnum.isnumeric() and len(rnum) == 2):
-                err_msg = "invalid ring number '%{}'".format(rnum)
+                err_msg = f"invalid ring number '%{rnum}'"
                 raise SMILESParserError(smiles, err_msg, i)
             token = SMILESToken(bond_idx, i, i + 3,
                                 SMILESTokenTypes.RING, smiles[i:i+3])
 
         else:
-            err_msg = "unrecognized symbol '{}'".format(smiles[i])
+            err_msg = f"unrecognized symbol '{smiles[i]}'"
             raise SMILESParserError(smiles, err_msg, i)
 
         yield token
@@ -238,7 +238,7 @@ def _derive_mol_from_tokens(mol, smiles, tokens, i):
         elif symbol_type == SMILESTokenTypes.ATOM:
             curr = smiles_to_atom(symbol)
             if curr is None:
-                err_msg = "invalid atom symbol '{}'".format(symbol)
+                err_msg = f"invalid atom symbol '{symbol}'"
                 raise SMILESParserError(smiles, err_msg, tok.start_idx)
 
             curr, i = _attach_atom(mol, bond_char, curr, prev_atom, i, tok)
@@ -289,7 +289,7 @@ def _derive_mol_from_tokens(mol, smiles, tokens, i):
 
     if ring_log:
         rnum, (tok, _, _) = list(ring_log.items())[-1]
-        err_msg = "hanging ring number '{}'".format(rnum)
+        err_msg = f"hanging ring number '{rnum}'"
         raise SMILESParserError(smiles, err_msg, tok.start_idx)
     return i
 
@@ -377,7 +377,7 @@ def atom_to_smiles(atom: Atom, brackets: bool = True) -> str:
         elif specs == (None, None, 0, 0) and (atom.element in ORGANIC_SUBSET):
             builder.append("H0")
         if atom.charge != 0:
-            builder.append("{:+}".format(atom.charge))
+            builder.append(f"{atom.charge:+}")
         if brackets:
             builder.append("]")
 

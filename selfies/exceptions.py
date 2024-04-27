@@ -8,18 +8,12 @@ class SMILESParserError(ValueError):
         self.reason = reason
 
     def __str__(self):
-        err_msg = "\n" \
-                  "\tSMILES: {smiles}\n" \
-                  "\t        {pointer}\n" \
-                  "\tIndex:  {index}\n" \
-                  "\tReason: {reason}"
-
-        return err_msg.format(
-            smiles=self.smiles,
-            pointer=(" " * self.idx + "^"),
-            index=self.idx,
-            reason=self.reason
-        )
+        pointer = " " * self.idx + "^"
+        return (f"\n"
+                f"\tSMILES: {self.smiles}\n"
+                f"\t        {pointer}\n"
+                f"\tIndex:  {self.idx}\n"
+                f"\tReason: {self.reason}")
 
 
 class EncoderError(Exception):

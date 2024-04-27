@@ -201,9 +201,7 @@ def _derive_mol_from_symbols(
 
 
 def _raise_decoder_error(selfies, invalid_symbol):
-    err_msg = "invalid symbol '{}'\n\tSELFIES: {}".format(
-        invalid_symbol, selfies
-    )
+    err_msg = f"invalid symbol '{invalid_symbol}'\n\tSELFIES: {selfies}"
     raise DecoderError(err_msg)
 
 

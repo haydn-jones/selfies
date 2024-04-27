@@ -176,7 +176,7 @@ def _build_branch_cache():
     cache = dict()
     for L in range(1, 4):
         for bond_char in ["", "=", "#"]:
-            symbol = "[{}Branch{}]".format(bond_char, L)
+            symbol = f"[{bond_char}Branch{L}]"
             cache[symbol] = (smiles_to_bond(bond_char)[0], L)
     return cache
 
@@ -186,7 +186,7 @@ def _build_ring_cache():
     for L in range(1, 4):
         # [RingL], [=RingL], [#RingL]
         for bond_char in ["", "=", "#"]:
-            symbol = "[{}Ring{}]".format(bond_char, L)
+            symbol = f"[{bond_char}Ring{L}]"
             order, stereo = smiles_to_bond(bond_char)
             cache[symbol] = (order, L, (stereo, stereo))
 
@@ -194,7 +194,7 @@ def _build_ring_cache():
         for lchar, rchar in itertools.product(["-", "/", "\\"], repeat=2):
             if lchar == rchar == "-":
                 continue
-            symbol = "[{}{}Ring{}]".format(lchar, rchar, L)
+            symbol = f"[{lchar}{rchar}Ring{L}]"
             order, lstereo = smiles_to_bond(lchar)
             order, rstereo = smiles_to_bond(rchar)
             cache[symbol] = (order, L, (lstereo, rstereo))

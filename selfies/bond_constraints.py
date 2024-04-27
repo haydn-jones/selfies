@@ -63,7 +63,7 @@ def get_preset_constraints(name: str) -> Dict[str, int]:
     """
 
     if name not in _PRESET_CONSTRAINTS:
-        raise ValueError("unrecognized preset name '{}'".format(name))
+        raise ValueError(f"unrecognized preset name '{name}'")
     return dict(_PRESET_CONSTRAINTS[name])
 
 
@@ -129,13 +129,12 @@ def set_semantic_constraints(
             else:
                 valid = (key[:j] in ELEMENTS) and key[j + 1:].isnumeric()
             if not valid:
-                err_msg = "invalid key '{}' in bond_constraints".format(key)
+                err_msg = f"invalid key '{key}' in bond_constraints"
                 raise ValueError(err_msg)
 
             # error checking for values
             if not (isinstance(value, int) and value >= 0):
-                err_msg = "invalid value at " \
-                          "bond_constraints['{}'] = {}".format(key, value)
+                err_msg = f"invalid value at bond_constraints['{key}'] = {value}"
                 raise ValueError(err_msg)
 
         _current_constraints = dict(bond_constraints)
@@ -163,16 +162,16 @@ def get_semantic_robust_alphabet() -> Set[str]:
     for (a, c), (b, m) in product(_current_constraints.items(), bonds.items()):
         if (m > c) or (a == "?"):
             continue
-        symbol = "[{}{}]".format(b, a)
+        symbol = f"[{b}{a}]"
         alphabet_subset.add(symbol)
 
     # add branch and ring symbols
     for i in range(1, 4):
-        alphabet_subset.add("[Ring{}]".format(i))
-        alphabet_subset.add("[=Ring{}]".format(i))
-        alphabet_subset.add("[Branch{}]".format(i))
-        alphabet_subset.add("[=Branch{}]".format(i))
-        alphabet_subset.add("[#Branch{}]".format(i))
+        alphabet_subset.add(f"[Ring{i}]")
+        alphabet_subset.add(f"[=Ring{i}]")
+        alphabet_subset.add(f"[Branch{i}]")
+        alphabet_subset.add(f"[=Branch{i}]")
+        alphabet_subset.add(f"[#Branch{i}]")
 
     alphabet_subset.update(INDEX_ALPHABET)
 
@@ -191,7 +190,7 @@ def get_bonding_capacity(element: str, charge: int) -> int:
 
     key = element
     if charge != 0:
-        key += "{:+}".format(charge)
+        key += f"{charge:+}"
 
     if key in _current_constraints:
         return _current_constraints[key]

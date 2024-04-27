@@ -18,10 +18,10 @@ def modernize_symbol(symbol):
         else:
             bond_char, atom_symbol = "", symbol[1:-5]
 
-        atom = smiles_to_atom("[{}]".format(atom_symbol))
+        atom = smiles_to_atom(f"[{atom_symbol}]")
         if (atom is not None) and (not atom.is_aromatic):
             atom_symbol = atom_to_smiles(atom, brackets=False)  # standardize
-            symbol = "[{}{}]".format(bond_char, atom_symbol)
+            symbol = f"[{bond_char}{atom_symbol}]"
 
     return symbol
 

@@ -8,7 +8,6 @@ from selfies.utils.smiles_utils import (
 
 from selfies.mol_graph import AttributionMap
 
-
 def encoder(smiles: str, strict: bool = True, attribute: bool = False) -> str:
     """Translates a SMILES string into its corresponding SELFIES string.
 
@@ -64,11 +63,11 @@ def encoder(smiles: str, strict: bool = True, attribute: bool = False) -> str:
     try:
         mol = smiles_to_mol(smiles, attributable=attribute)
     except SMILESParserError as err:
-        err_msg = "failed to parse input\n\tSMILES: {}".format(smiles)
+        err_msg = f"failed to parse input\n\tSMILES: {smiles}"
         raise EncoderError(err_msg) from err
 
     if not mol.kekulize():
-        err_msg = "kekulization failed\n\tSMILES: {}".format(smiles)
+        err_msg = f"kekulization failed\n\tSMILES: {smiles}"
         raise EncoderError(err_msg)
 
     if strict:
@@ -106,12 +105,10 @@ def _check_bond_constraints(mol, smiles):
             errors.append((atom_to_smiles(atom), bond_count, bond_cap))
 
     if errors:
-        err_msg = "input violates the currently-set semantic constraints\n" \
-                  "\tSMILES: {}\n" \
-                  "\tErrors:\n".format(smiles)
+        err_msg = f"input violates the currently-set semantic constraints\n\tSMILES: {smiles}\n\tErrors:\n"
         for e in errors:
-            err_msg += "\t[{:} with {} bond(s) - " \
-                       "a max. of {} bond(s) was specified]\n".format(*e)
+            atom_smiles, current_bond_count, maximum_bonds = e
+            err_msg += f"\t[{atom_smiles} with {current_bond_count} bond(s) - a max. of {maximum_bonds} bond(s) was specified]\n"
         raise EncoderError(err_msg)
 
 
@@ -165,10 +162,7 @@ def _fragment_to_selfies(mol, bond_into_root, root,
                 rev_bond = mol.get_dirbond(src=bond.dst, dst=bond.src)
                 ring_len = bond.src - bond.dst
                 Q_as_symbols = get_selfies_from_index(ring_len - 1)
-                ring_symbol = "[{}Ring{}]".format(
-                    _ring_bonds_to_selfies(rev_bond, bond),
-                    len(Q_as_symbols)
-                )
+                ring_symbol = f"[{_ring_bonds_to_selfies(rev_bond, bond)}Ring{len(Q_as_symbols)}]"
 
                 derived.append(ring_symbol)
                 attribution_maps.append(AttributionMap(
@@ -191,10 +185,7 @@ def _fragment_to_selfies(mol, bond_into_root, root,
                 branch = _fragment_to_selfies(
                     mol, bond, bond.dst, attribution_maps, len(derived))
                 Q_as_symbols = get_selfies_from_index(len(branch) - 1)
-                branch_symbol = "[{}Branch{}]".format(
-                    _bond_to_selfies(bond, show_stereo=False),
-                    len(Q_as_symbols)
-                )
+                branch_symbol = f"[{_bond_to_selfies(bond, show_stereo=False)}Branch{len(Q_as_symbols)}]"
                 end = len(attribution_maps)
 
                 derived.append(branch_symbol)
@@ -239,4 +230,4 @@ def _ring_bonds_to_selfies(lbond, rbond):
 def _atom_to_selfies(bond, atom):
     assert not atom.is_aromatic
     bond_char = "" if (bond is None) else _bond_to_selfies(bond)
-    return "[{}{}]".format(bond_char, atom_to_smiles(atom, brackets=False))
+    return f"[{bond_char}{atom_to_smiles(atom, brackets=False)}]"

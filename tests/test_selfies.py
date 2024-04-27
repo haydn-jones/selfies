@@ -56,7 +56,7 @@ def test_random_selfies_decoder(trials, max_selfies_len, large_alphabet):
         except Exception:
             is_valid = False
 
-        err_msg = "SMILES: {}\n\t SELFIES: {}".format(smiles, rand_selfies)
+        err_msg = f"SMILES: {smiles}\n\t SELFIES: {rand_selfies}"
         assert is_valid, err_msg
 
 
