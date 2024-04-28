@@ -6,9 +6,7 @@ from selfies.utils.smiles_utils import (
     smiles_to_mol
 )
 
-from selfies.mol_graph import AttributionMap
-
-def encoder(smiles: str, strict: bool = True, attribute: bool = False) -> str:
+def encoder(smiles: str, strict: bool = True) -> str:
     """Translates a SMILES string into its corresponding SELFIES string.
 
     This translation is deterministic and does not depend on the
@@ -61,7 +59,7 @@ def encoder(smiles: str, strict: bool = True, attribute: bool = False) -> str:
     """
 
     try:
-        mol = smiles_to_mol(smiles, attributable=attribute)
+        mol = smiles_to_mol(smiles)
     except SMILESParserError as err:
         err_msg = f"failed to parse input\n\tSMILES: {smiles}"
         raise EncoderError(err_msg) from err
@@ -82,17 +80,13 @@ def encoder(smiles: str, strict: bool = True, attribute: bool = False) -> str:
             atom.invert_chirality()
 
     fragments = []
-    attribution_maps = []
-    attribution_index = 0
     for root in mol.get_roots():
         derived = list(_fragment_to_selfies(
-            mol, None, root, attribution_maps, attribution_index))
-        attribution_index += len(derived)
+            mol, None, root))
         fragments.append("".join(derived))
     # trim attribution map of empty tokens
-    attribution_maps = [a for a in attribution_maps if a.token]
-    result = ".".join(fragments), attribution_maps
-    return result if attribute else result[0]
+    result = ".".join(fragments)
+    return result
 
 
 def _check_bond_constraints(mol, smiles):
@@ -138,8 +132,7 @@ def _should_invert_chirality(mol, atom):
     return count % 2 != 0  # if odd permutation, should invert chirality
 
 
-def _fragment_to_selfies(mol, bond_into_root, root,
-                         attribution_maps, attribution_index=0):
+def _fragment_to_selfies(mol, bond_into_root, root):
     derived = []
 
     bond_into_curr, curr = bond_into_root, root
@@ -147,10 +140,6 @@ def _fragment_to_selfies(mol, bond_into_root, root,
         curr_atom = mol.get_atom(curr)
         token = _atom_to_selfies(bond_into_curr, curr_atom)
         derived.append(token)
-
-        attribution_maps.append(AttributionMap(
-            len(derived) - 1 + attribution_index,
-            token, mol.get_attribution(curr_atom)))
 
         out_bonds = mol.get_out_dirbonds(curr)
         for i, bond in enumerate(out_bonds):
@@ -165,14 +154,8 @@ def _fragment_to_selfies(mol, bond_into_root, root,
                 ring_symbol = f"[{_ring_bonds_to_selfies(rev_bond, bond)}Ring{len(Q_as_symbols)}]"
 
                 derived.append(ring_symbol)
-                attribution_maps.append(AttributionMap(
-                    len(derived) - 1 + attribution_index,
-                    ring_symbol, mol.get_attribution(bond)))
                 for symbol in Q_as_symbols:
                     derived.append(symbol)
-                    attribution_maps.append(AttributionMap(
-                        len(derived) - 1 + attribution_index,
-                        symbol, mol.get_attribution(bond)))
 
             elif i == len(out_bonds) - 1:
                 bond_into_curr, curr = bond, bond.dst
@@ -181,26 +164,14 @@ def _fragment_to_selfies(mol, bond_into_root, root,
                 # start, end are so we can go back and
                 # correct offset from branch symbol in
                 # branch tokens
-                start = len(attribution_maps)
                 branch = _fragment_to_selfies(
-                    mol, bond, bond.dst, attribution_maps, len(derived))
+                    mol, bond, bond.dst)
                 Q_as_symbols = get_selfies_from_index(len(branch) - 1)
                 branch_symbol = f"[{_bond_to_selfies(bond, show_stereo=False)}Branch{len(Q_as_symbols)}]"
-                end = len(attribution_maps)
 
                 derived.append(branch_symbol)
                 for symbol in Q_as_symbols:
                     derived.append(symbol)
-                    attribution_maps.append(AttributionMap(
-                        len(derived) - 1 + attribution_index,
-                        symbol, mol.get_attribution(bond)))
-
-                # account for branch symbol because it is inserted after
-                for j in range(start, end):
-                    attribution_maps[j].index += len(Q_as_symbols) + 1
-                attribution_maps.append(AttributionMap(
-                    len(derived) - 1 + attribution_index,
-                    branch_symbol, mol.get_attribution(bond)))
 
                 derived.extend(branch)
 

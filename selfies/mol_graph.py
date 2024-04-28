@@ -1,3 +1,4 @@
+from collections import defaultdict
 import functools
 import itertools
 from typing import List, Optional, Union
@@ -6,29 +7,6 @@ from dataclasses import dataclass, field
 from selfies.bond_constraints import get_bonding_capacity
 from selfies.constants import AROMATIC_VALENCES
 from selfies.utils.matching_utils import find_perfect_matching
-
-
-@dataclass
-class Attribution:
-    """A dataclass that contains token string and its index.
-    """
-    #: token index
-    index: int
-    #: token string
-    token: str
-
-
-@dataclass
-class AttributionMap:
-    """A mapping from input to single output token showing which
-    input tokens created the output token.
-    """
-    #: Index of output token
-    index: int
-    #: Output token
-    token: str
-    #: List of input tokens that created the output token
-    attribution: List[Attribution] = field(default_factory=list)
 
 
 class Atom:
@@ -94,16 +72,14 @@ class MolecularGraph:
     and bonds in the string.
     """
 
-    def __init__(self, attributable=False):
+    def __init__(self):
         self._roots = list()  # stores root atoms, where traversal begins
         self._atoms = list()  # stores atoms in this graph
         self._bond_dict = dict()  # stores all bonds in this graph
         self._adj_list = list()  # adjacency list, representing this graph
         self._bond_counts = list()  # stores number of bonds an atom has made
         self._ring_bond_flags = list()  # stores if an atom makes a ring bond
-        self._delocal_subgraph = dict()  # delocalization subgraph
-        self._attribution = dict()  # attribution of each atom/bond
-        self._attributable = attributable
+        self._delocal_subgraph = defaultdict(list)
 
     def __len__(self):
         return len(self._atoms)
@@ -115,14 +91,6 @@ class MolecularGraph:
 
     def has_out_ring_bond(self, src: int) -> bool:
         return self._ring_bond_flags[src]
-
-    def get_attribution(
-        self,
-        o: Union[DirectedBond, Atom]
-    ) -> List[Attribution]:
-        if self._attributable and o in self._attribution:
-            return self._attribution[o]
-        return None
 
     def get_roots(self) -> List[int]:
         return self._roots
@@ -155,17 +123,6 @@ class MolecularGraph:
             self._delocal_subgraph[atom.index] = list()
         return atom
 
-    def add_attribution(
-            self,
-            o: Union[DirectedBond, Atom],
-            attr: List[Attribution]
-    ) -> None:
-        if self._attributable:
-            if o in self._attribution:
-                self._attribution[o].extend(attr)
-            else:
-                self._attribution[o] = attr
-
     def add_bond(
             self, src: int, dst: int,
             order: Union[int, float], stereo: str
@@ -178,8 +135,8 @@ class MolecularGraph:
         self._bond_counts[dst] += order
 
         if order == 1.5:
-            self._delocal_subgraph.setdefault(src, []).append(dst)
-            self._delocal_subgraph.setdefault(dst, []).append(src)
+            self._delocal_subgraph[src].append(dst)
+            self._delocal_subgraph[dst].append(src)
         return bond
 
     def add_placeholder_bond(self, src: int) -> int:
@@ -203,8 +160,8 @@ class MolecularGraph:
         self._ring_bond_flags[b] = True
 
         if order == 1.5:
-            self._delocal_subgraph.setdefault(a, []).append(b)
-            self._delocal_subgraph.setdefault(b, []).append(a)
+            self._delocal_subgraph[a].append(b)
+            self._delocal_subgraph[b].append(a)
 
     def update_bond_order(
             self, a: int, b: int,
